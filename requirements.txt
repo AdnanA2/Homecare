@@ -1,0 +1,11 @@
+streamlit==1.32.0
+openai-whisper==20231117
+requests==2.31.0
+fpdf==1.7.2
+python-dotenv==1.0.0  # For managing email credentials
+google-auth==2.27.0
+
+# Note: sqlite3 is built into Python, no need to install separately
+# To use email functionality, set these environment variables:
+# GMAIL_USER=your.email@gmail.com
+# GMAIL_APP_PASSWORD=your_app_password 
