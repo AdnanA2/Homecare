@@ -93,46 +93,77 @@ else:
         
         with col1:
             st.markdown("<h3 style='margin-bottom: 1rem;'>📤 Upload Voice Memo</h3>", unsafe_allow_html=True)
-            uploaded_file = st.file_uploader("Upload a `.wav` or `.mp3` file", type=["wav", "mp3"])
+            
+            # Add supported formats info
+            st.markdown("""
+            ℹ️ **Supported Audio Formats:**
+            - `.wav` - Standard audio format
+            - `.mp3` - Compressed audio format
+            - `.m4a` - Common mobile recording format
+            
+            ⚠️ **Not Supported:**
+            - Video files (`.mov`, `.mp4`)
+            - iOS voice memos (`.m4a` from older iOS versions)
+            - Corrupted or empty files
+            """)
+            
+            uploaded_file = st.file_uploader("Upload a voice memo", type=["wav", "mp3", "m4a"])
             
             st.markdown("<br>", unsafe_allow_html=True)
             
             if uploaded_file is not None:
-                # Save uploaded file
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                file_path = f"audio_uploads/{timestamp}_{uploaded_file.name}"
-                with open(file_path, "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-                
-                # Process audio
-                with st.spinner("🎙️ Transcribing audio..."):
-                    transcript = transcribe_audio(file_path)
-                
-                with st.spinner("🧠 Generating summary..."):
-                    summary = summarize_text(transcript)
-                
-                # Save files
-                base_filename = f"care_log_{timestamp}"
-                txt_path = f"summaries/{base_filename}.txt"
-                pdf_path = f"summaries/{base_filename}.pdf"
-                
-                with open(txt_path, "w") as f:
-                    f.write(summary)
-                
-                export_to_pdf(summary, base_filename)
-                
-                # Log to database
-                if log_care_summary(
-                    st.session_state.username,
-                    uploaded_file.name,
-                    transcript,
-                    summary,
-                    txt_path,
-                    pdf_path
-                ):
-                    st.success("✅ Log saved successfully!")
-                else:
-                    st.error("❌ Error saving to database")
+                try:
+                    # Save uploaded file with proper extension
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    file_extension = os.path.splitext(uploaded_file.name)[1].lower()
+                    file_path = f"audio_uploads/{timestamp}{file_extension}"
+                    
+                    # Ensure the uploads directory exists
+                    os.makedirs("audio_uploads", exist_ok=True)
+                    
+                    # Save the file
+                    with open(file_path, "wb") as f:
+                        f.write(uploaded_file.getbuffer())
+                    
+                    # Process audio
+                    with st.spinner("🎙️ Transcribing audio..."):
+                        transcript = transcribe_audio(file_path)
+                        if transcript is None:
+                            st.error("❌ Could not transcribe the audio file. Please try a different file.")
+                            st.stop()
+                    
+                    with st.spinner("🧠 Generating summary..."):
+                        summary = summarize_text(transcript)
+                    
+                    # Save files
+                    base_filename = f"care_log_{timestamp}"
+                    txt_path = f"summaries/{base_filename}.txt"
+                    pdf_path = f"summaries/{base_filename}.pdf"
+                    
+                    # Ensure the summaries directory exists
+                    os.makedirs("summaries", exist_ok=True)
+                    
+                    with open(txt_path, "w") as f:
+                        f.write(summary)
+                    
+                    export_to_pdf(summary, base_filename)
+                    
+                    # Log to database
+                    if log_care_summary(
+                        st.session_state.username,
+                        uploaded_file.name,
+                        transcript,
+                        summary,
+                        txt_path,
+                        pdf_path
+                    ):
+                        st.success("✅ Log saved successfully!")
+                    else:
+                        st.error("❌ Error saving to database")
+                    
+                except Exception as e:
+                    st.error(f"❌ Error processing file: {str(e)}")
+                    st.stop()
         
         with col2:
             st.markdown("<h3 style='margin-bottom: 1rem;'>📋 Results</h3>", unsafe_allow_html=True)
@@ -188,4 +219,4 @@ else:
 
 # Footer
 st.markdown("<hr style='border: 1px solid #F0F2F6;'>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; color: gray;'>© 2024 HomeCare AI. All rights reserved.</p>", unsafe_allow_html=True) 
+st.markdown("<p style='text-align: center; color: gray;'>© 2025 HomeCare AI. All rights reserved.</p>", unsafe_allow_html=True) 
