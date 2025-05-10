@@ -8,8 +8,20 @@ from database import init_db, log_care_summary
 from email_utils import send_pdf_email
 from dotenv import load_dotenv
 
-# Load environment variables
+# Load environment variables (for any non-secret configurations)
 load_dotenv()
+
+# Check for required secrets
+required_secrets = ["GEMINI_API_KEY", "EMAIL_USERNAME", "EMAIL_PASSWORD"]
+missing_secrets = [secret for secret in required_secrets if secret not in st.secrets]
+
+if missing_secrets:
+    st.warning(f"""
+    ⚠️ Missing required secrets in Streamlit configuration:
+    {', '.join(missing_secrets)}
+    
+    Please add these to your .streamlit/secrets.toml file or configure them in Streamlit Cloud.
+    """)
 
 # Set page config
 st.set_page_config(

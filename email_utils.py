@@ -1,53 +1,49 @@
+import streamlit as st
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 import os
 
-def send_pdf_email(recipient_email, subject, body, attachment_path):
+def send_pdf_email(recipient_email, subject, body, pdf_path):
     """
-    Send an email with a PDF attachment using Gmail SMTP.
-    
-    Args:
-        recipient_email (str): Email address of the recipient
-        subject (str): Email subject
-        body (str): Email body text
-        attachment_path (str): Path to the PDF file to attach
-        
-    Returns:
-        bool: True if email was sent successfully, False otherwise
+    Send a PDF file via email using Gmail SMTP.
     """
-    # Email configuration
-    sender_email = os.getenv('GMAIL_USER')  # Set this in your environment
-    sender_password = os.getenv('GMAIL_APP_PASSWORD')  # Set this in your environment
+    # Check for required secrets
+    required_secrets = ["EMAIL_USERNAME", "EMAIL_PASSWORD", "EMAIL_SMTP_SERVER", "EMAIL_SMTP_PORT"]
+    missing_secrets = [secret for secret in required_secrets if secret not in st.secrets]
     
-    if not sender_email or not sender_password:
-        raise ValueError("Gmail credentials not found in environment variables")
+    if missing_secrets:
+        st.warning(f"Missing email configuration in Streamlit secrets: {', '.join(missing_secrets)}")
+        return False
     
     try:
         # Create message
         msg = MIMEMultipart()
-        msg['From'] = sender_email
+        msg['From'] = st.secrets["EMAIL_USERNAME"]
         msg['To'] = recipient_email
         msg['Subject'] = subject
         
         # Add body
         msg.attach(MIMEText(body, 'plain'))
         
-        # Add attachment
-        with open(attachment_path, 'rb') as f:
+        # Attach PDF
+        with open(pdf_path, 'rb') as f:
             pdf = MIMEApplication(f.read(), _subtype='pdf')
-            pdf.add_header('Content-Disposition', 'attachment', 
-                         filename=os.path.basename(attachment_path))
+            pdf.add_header('Content-Disposition', 'attachment', filename=os.path.basename(pdf_path))
             msg.attach(pdf)
         
+        # Connect to SMTP server
+        server = smtplib.SMTP(st.secrets["EMAIL_SMTP_SERVER"], st.secrets["EMAIL_SMTP_PORT"])
+        server.starttls()
+        server.login(st.secrets["EMAIL_USERNAME"], st.secrets["EMAIL_PASSWORD"])
+        
         # Send email
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-            smtp.login(sender_email, sender_password)
-            smtp.send_message(msg)
-            
+        server.send_message(msg)
+        server.quit()
+        
         return True
         
     except Exception as e:
-        print(f"Error sending email: {e}")
+        st.error(f"Error sending email: {str(e)}")
         return False 

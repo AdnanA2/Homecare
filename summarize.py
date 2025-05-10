@@ -1,62 +1,45 @@
-import requests
-import json
+import streamlit as st
+import google.generativeai as genai
 
-# Gemini API configuration (temporary for testing)
-GEMINI_API_KEY = "AIzaSyAxrFQPCbJOxoMhKHfcvvvG--Csk6bxg2s"
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
-
-def summarize_text(text: str) -> str:
+def summarize_text(text):
     """
-    Summarizes text using Google's Gemini Pro model (temporary implementation).
-    Original LLaMA implementation is commented out below.
-    
-    Args:
-        text (str): Text to summarize
-        
-    Returns:
-        str: Summarized text
+    Summarize the given text using Google's Gemini API.
     """
-    # Prepare the prompt
-    prompt = f"Summarize this caregiver voice note into a professional, clear care log:\n\n{text}"
-    
-    # Prepare the request payload
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt}
-                ]
-            }
-        ]
-    }
-    
-    # Set up headers with API key
-    headers = {
-        "Content-Type": "application/json",
-        "x-goog-api-key": GEMINI_API_KEY
-    }
+    if "GEMINI_API_KEY" not in st.secrets:
+        st.warning("Missing Gemini API key in Streamlit secrets.")
+        return "Error: Gemini API key not configured."
     
     try:
-        # Make the API request
-        response = requests.post(
-            GEMINI_API_URL,
-            headers=headers,
-            json=payload
-        )
+        # Configure Gemini API
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
         
-        # Check if request was successful
-        response.raise_for_status()
+        # Initialize the model
+        model = genai.GenerativeModel('gemini-pro')
         
-        # Extract the summary from the response
-        summary = response.json()['candidates'][0]['content']['parts'][0]['text']
-        return summary
+        # Create the prompt
+        prompt = f"""
+        As a healthcare documentation specialist, please summarize the following caregiver's voice memo 
+        into a clear, professional care log. Focus on key medical observations, patient status, 
+        and any actions taken. Use medical terminology where appropriate but keep it accessible.
         
-    except requests.exceptions.RequestException as e:
-        print(f"Error calling Gemini API: {e}")
-        raise Exception(f"Failed to generate summary: {str(e)}")
-    except (KeyError, IndexError) as e:
-        print(f"Error parsing Gemini API response: {e}")
-        raise Exception("Failed to parse summary from API response")
+        Voice Memo Transcript:
+        {text}
+        
+        Please provide a structured summary with these sections:
+        1. Patient Status
+        2. Key Observations
+        3. Actions Taken
+        4. Follow-up Notes
+        """
+        
+        # Generate the summary
+        response = model.generate_content(prompt)
+        
+        return response.text
+        
+    except Exception as e:
+        st.error(f"Error generating summary: {str(e)}")
+        return f"Error: {str(e)}"
 
 # Original LLaMA implementation (commented out for now)
 """
