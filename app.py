@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Check for required secrets
-required_secrets = ["GEMINI_API_KEY", "EMAIL_USERNAME", "EMAIL_PASSWORD"]
+required_secrets = ["GEMINI_API_KEY"]
 missing_secrets = [secret for secret in required_secrets if secret not in st.secrets]
 
 if missing_secrets:
