@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Check for required secrets
-required_secrets = ["GEMINI_API_KEY"]
+required_secrets = ["GEMINI_API_KEY", "EMAIL_USERNAME", "EMAIL_PASSWORD"]
 missing_secrets = [secret for secret in required_secrets if secret not in st.secrets]
 
 if missing_secrets:
@@ -30,6 +30,100 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Custom CSS for the login page
+st.markdown("""
+    <style>
+    /* Main container */
+    .main {
+        padding: 0;
+        background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+    }
+    
+    /* Login container */
+    .login-container {
+        display: flex;
+        min-height: 100vh;
+        background: white;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    
+    /* Left column */
+    .login-left {
+        background: linear-gradient(135deg, #4B9CD3 0%, #2C5282 100%);
+        padding: 4rem 2rem;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+    }
+    
+    /* Right column */
+    .login-right {
+        padding: 4rem 2rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    /* Typography */
+    .login-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: white;
+    }
+    
+    .login-subtitle {
+        font-size: 1.2rem;
+        color: rgba(255,255,255,0.9);
+        margin-bottom: 2rem;
+    }
+    
+    .login-form-title {
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: #2C5282;
+        margin-bottom: 2rem;
+    }
+    
+    /* Form elements */
+    .stTextInput > div > div > input {
+        border-radius: 8px;
+        border: 1px solid #E2E8F0;
+        padding: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    .stButton > button {
+        background-color: #4B9CD3;
+        color: white;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+        border: none;
+        width: 100%;
+        transition: background-color 0.3s;
+    }
+    
+    .stButton > button:hover {
+        background-color: #2C5282;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .login-container {
+            flex-direction: column;
+        }
+        .login-left, .login-right {
+            padding: 2rem 1rem;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 # Initialize database
 init_db()
@@ -55,17 +149,32 @@ st.markdown("<hr style='border: 1px solid #F0F2F6;'>", unsafe_allow_html=True)
 
 # Login form
 if not st.session_state.logged_in:
-    col1, col2, col3 = st.columns([1,2,1])
-    with col2:
-        st.markdown("<div style='background-color: #F8FAFC; padding: 2rem; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center;'>🔐 Caregiver Login</h3>", unsafe_allow_html=True)
-        st.markdown("<p style='text-align: center; color: gray;'>Please log in to access the system</p>", unsafe_allow_html=True)
-        st.markdown("<hr style='border: 1px solid #F0F2F6;'>", unsafe_allow_html=True)
+    st.markdown("""
+        <div class="login-container">
+            <div class="login-left" style="flex: 0.6;">
+                <h1 class="login-title">🏥 HomeCare AI</h1>
+                <p class="login-subtitle">Secure, AI-powered voice documentation for caregivers</p>
+                <div style="margin-top: 2rem; text-align: left; max-width: 400px;">
+                    <h3 style="color: white; margin-bottom: 1rem;">Why HomeCare AI?</h3>
+                    <ul style="color: rgba(255,255,255,0.9); list-style-type: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;">✓ Save time with voice-to-text</li>
+                        <li style="margin-bottom: 0.5rem;">✓ Professional documentation</li>
+                        <li style="margin-bottom: 0.5rem;">✓ Secure and private</li>
+                        <li style="margin-bottom: 0.5rem;">✓ Easy to use</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="login-right" style="flex: 0.4;">
+                <h2 class="login-form-title">Welcome Back</h2>
+                <p style="color: #64748B; margin-bottom: 2rem;">Please log in to access your care documentation.</p>
+            """, unsafe_allow_html=True)
+    
+    # Login form in the right column
+    with st.container():
+        username = st.text_input("Username", key="username")
+        password = st.text_input("Password", type="password", key="password")
         
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        
-        if st.button("Login", use_container_width=True):
+        if st.button("Log In", use_container_width=True):
             if username in USERS and USERS[username] == password:
                 st.session_state.logged_in = True
                 st.session_state.username = username
@@ -73,7 +182,8 @@ if not st.session_state.logged_in:
             else:
                 st.error("Invalid username or password")
                 st.stop()
-        st.markdown("</div>", unsafe_allow_html=True)
+    
+    st.markdown("</div></div>", unsafe_allow_html=True)
 else:
     # Main app interface
     with st.container():
